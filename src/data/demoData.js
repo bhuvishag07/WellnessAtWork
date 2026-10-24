@@ -238,20 +238,25 @@ export const initialChallenges = [
     description: "Write down 3 specific things you are grateful for each evening to rewire cognitive positivity and lower work-related cortisol.",
     duration: "14 Days",
     targetGoal: "3 reflections / day",
-    unit: "entries",
+    unit: "reflections",
     rewardPoints: 150,
     participantsCount: 88,
-    progress: 0,
-    currentDay: 1,
+    progress: 35,
+    currentDay: 5,
     totalDays: 14,
     startDate: "2026-10-10",
     endDate: "2026-10-24",
-    status: "available",
-    joined: false,
-    completed: false
+    status: "active",
+    joined: true,
+    completed: false,
+    milestones: [
+      { day: 3, label: "Gratitude Spark", completed: true, points: 30 },
+      { day: 7, label: "Weekly Reflection", completed: false, points: 50 },
+      { day: 14, label: "Mindset Transformation", completed: false, points: 70 }
+    ]
   },
   {
-    id: "stair-climbing-pioneer",
+    id: "stairway-to-vitality",
     title: "Stairway to Vitality",
     category: "Steps & Fitness",
     categoryKey: "steps",
@@ -261,14 +266,19 @@ export const initialChallenges = [
     unit: "flights",
     rewardPoints: 220,
     participantsCount: 76,
-    progress: 0,
-    currentDay: 1,
+    progress: 28,
+    currentDay: 6,
     totalDays: 21,
     startDate: "2026-10-08",
     endDate: "2026-10-29",
-    status: "available",
-    joined: false,
-    completed: false
+    status: "active",
+    joined: true,
+    completed: false,
+    milestones: [
+      { day: 7, label: "Elevator Free Week", completed: false, points: 50 },
+      { day: 14, label: "Cardio Climber", completed: false, points: 70 },
+      { day: 21, label: "Peak Climber Master", completed: false, points: 100 }
+    ]
   }
 ];
 
@@ -486,13 +496,13 @@ export const wellnessResources = [
   },
   {
     id: "res-5",
-    title: "The Ultimate Ergonomic Desk Setup Guide",
+    title: "Ultimate Ergonomic Desk Setup Guide",
     category: "Workplace Health",
     readTime: "7 min read",
     type: "Ergonomics Checklist",
     description: "Detailed checklist for monitor eye-level alignment, 90-degree elbow posture, lumbar support angles, and wrist positioning to prevent carpal tunnel syndrome.",
     tags: ["Ergonomics", "Posture", "Desk Setup"],
-    content: "Position your primary monitor directly in front of you so your line of sight hits the top third of the screen. Keep wrists neutral and elbows at 90-100 degrees...",
+    content: "Position your primary monitor directly in front of you so your line of sight hits the top third of the screen, approximately an arm's length away. Maintain elbows and knees at a relaxed 90-to-100 degree angle to relieve strain on tendons and lower lumbar discs. Keep wrists in a neutral, unbent position using an ergonomic palm rest. Take 30-second micro-breaks every 30 minutes to roll shoulders and re-engage postural stabilizer muscles.",
     icon: "Shield"
   },
   {
@@ -503,7 +513,7 @@ export const wellnessResources = [
     type: "Practical Protocol",
     description: "How to use build and compilation wait times to unhook from hyper-focused cognitive tunnel vision and refresh executive mental bandwidth.",
     tags: ["Mental Fitness", "Coding", "Focus"],
-    content: "When a test suite runs or code compiles, resist the urge to tab over to social media. Instead, look 20 feet into the distance and take three slow, deliberate nasal breaths...",
+    content: "When a test suite runs, code compiles, or Docker containers spin up, resist the reflex to switch context to email or social feeds. Instead, practice the 20-20-20 rule: gaze at an object 20 feet away for 20 seconds, drop shoulder tension, and take three diaphragmatic nasal breaths. This micro-reset preserves executive functioning and prevents cognitive fatigue over 8-hour sprint cycles.",
     icon: "Brain"
   }
 ];
@@ -553,22 +563,22 @@ export const rewardsStore = [
   },
   {
     id: "rew-5",
-    title: "Bose Noise-Cancelling Headphones Voucher ($50)",
+    title: "Bose Noise-Cancelling Headphones Contribution",
     category: "Deep Focus",
     pointsCost: 1200,
-    partner: "Bose / Amazon Corporate Perk",
-    description: "Voucher contribution towards premium active noise-cancelling headphones for deep focus work sessions.",
+    partner: "Bose / Amazon Corporate Perk ($50 Voucher)",
+    description: "$50 voucher contribution towards premium active noise-cancelling headphones for deep focus work sessions and acoustic sanctuary.",
     status: "locked",
     neededPoints: 350,
     image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=350&q=80"
   },
   {
     id: "rew-6",
-    title: "Curated Organic Herbal Tea & Adaptogen Tonic Box",
+    title: "Organic Herbal Tea & Adaptogen Tonic Box",
     category: "Vitality",
     pointsCost: 600,
     partner: "Vahdam / Traditional Medicinals",
-    description: "An artisan selection of organic chamomile, ashwagandha, matcha, and peppermint teas designed for all-day wellness.",
+    description: "An artisan selection of organic chamomile, ashwagandha, matcha, and peppermint teas designed for all-day focus, calm, and metabolic balance.",
     status: "available",
     image: "https://images.unsplash.com/photo-1597481499750-3e6b22637e12?auto=format&fit=crop&w=350&q=80"
   }

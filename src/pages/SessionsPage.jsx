@@ -21,7 +21,7 @@ export const SessionsPage = () => {
   const [selectedSessionToBook, setSelectedSessionToBook] = useState(null);
   const [confirming, setConfirming] = useState(false);
 
-  const categories = ['All', '1-on-1 Counseling', 'Yoga / Desk Stretching', 'Guided Meditation'];
+  const categories = ['All', '1-on-1 Counseling', 'Yoga / Desk Stretching', 'Guided Meditation', 'Nutrition & Vitality'];
 
   const filteredSessions = sessions.filter(s => {
     if (selectedCategory === 'All') return true;
