@@ -1,0 +1,252 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "WellnessAtWork API",
+    "version": "1.0.0",
+    "description": "Case Study 72 — Corporate Employee Wellness Platform Backend API"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:7500/api",
+      "description": "Local Development Server"
+    }
+  ],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "summary": "Register a new employee",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["fullName", "email", "password", "department"],
+                "properties": {
+                  "fullName": { "type": "string" },
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string", "minLength": 6 },
+                  "department": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Employee successfully registered and JWT set in cookie" },
+          "400": { "description": "Validation error" },
+          "409": { "description": "Email already registered" }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Employee or Admin login",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Successfully logged in with JWT cookie set" },
+          "401": { "description": "Invalid credentials" }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "summary": "Get authenticated user profile",
+        "tags": ["Authentication"],
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "User profile retrieved" },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/auth/firebase": {
+      "post": {
+        "summary": "Verify Firebase ID Token & authorize application JWT",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["idToken"],
+                "properties": {
+                  "idToken": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Firebase user authorized" }
+        }
+      }
+    },
+    "/user/dashboard": {
+      "get": {
+        "summary": "Aggregated user dashboard",
+        "tags": ["User"],
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Aggregated dashboard statistics, active challenges, recent activities, and rank" }
+        }
+      }
+    },
+    "/challenges": {
+      "get": {
+        "summary": "List all wellness challenges",
+        "tags": ["Challenges"],
+        "responses": {
+          "200": { "description": "List of challenges with user's joined and progress status" }
+        }
+      },
+      "post": {
+        "summary": "Create new challenge (Admin only)",
+        "tags": ["Challenges"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "201": { "description": "Challenge created" },
+          "403": { "description": "Admin privileges required" }
+        }
+      }
+    },
+    "/challenges/{id}/join": {
+      "post": {
+        "summary": "Join a wellness challenge",
+        "tags": ["Challenges"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Enrolled in challenge" },
+          "400": { "description": "Duplicate enrollment or inactive challenge" }
+        }
+      }
+    },
+    "/activities/log": {
+      "post": {
+        "summary": "Log wellness activity with authoritative points calculation",
+        "tags": ["Activities"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["activityType", "value"],
+                "properties": {
+                  "activityType": { "type": "string", "example": "Walking" },
+                  "value": { "type": "string", "example": "10000" },
+                  "durationMinutes": { "type": "number", "example": 45 },
+                  "challengeId": { "type": "string", "example": "30-day-walking" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Activity recorded, points credited, streak updated, Socket.io broadcasted" }
+        }
+      }
+    },
+    "/leaderboard": {
+      "get": {
+        "summary": "Get real-time community leaderboard",
+        "tags": ["Leaderboard"],
+        "parameters": [
+          { "name": "department", "in": "query", "schema": { "type": "string" } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Community rankings and user position" }
+        }
+      }
+    },
+    "/sessions": {
+      "get": {
+        "summary": "Get available and booked wellness sessions",
+        "tags": ["Sessions"],
+        "responses": {
+          "200": { "description": "Confidential counseling and yoga sessions" }
+        }
+      }
+    },
+    "/sessions/book": {
+      "post": {
+        "summary": "Book a confidential wellness session",
+        "tags": ["Sessions"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Session booked with slot deduction and confirmation alert" }
+        }
+      }
+    },
+    "/rewards": {
+      "get": {
+        "summary": "Get available rewards catalog",
+        "tags": ["Rewards"],
+        "responses": {
+          "200": { "description": "Rewards list with affordability status" }
+        }
+      }
+    },
+    "/rewards/redeem": {
+      "post": {
+        "summary": "Redeem reward voucher",
+        "tags": ["Rewards"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Points deducted atomically, voucher generated, ledger logged" }
+        }
+      }
+    },
+    "/check-ins": {
+      "post": {
+        "summary": "Submit 100% anonymous mental health check-in",
+        "tags": ["Mental Health Check-In"],
+        "responses": {
+          "201": { "description": "Anonymous sentiment recorded without saving user identity" }
+        }
+      }
+    },
+    "/wearable/sync": {
+      "post": {
+        "summary": "Sync biometric telemetry from Apple Health or Fitbit",
+        "tags": ["Wearables"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Telemetry processed through authoritative points pipeline" }
+        }
+      }
+    },
+    "/reports/participation/export": {
+      "get": {
+        "summary": "Export participation report as CSV or PDF (Admin only)",
+        "tags": ["Reports"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "format", "in": "query", "schema": { "type": "string", "enum": ["csv", "pdf"] } }
+        ],
+        "responses": {
+          "200": { "description": "Downloadable file" }
+        }
+      }
+    }
+  }
+}

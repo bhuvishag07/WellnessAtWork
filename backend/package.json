@@ -1,0 +1,30 @@
+{
+  "name": "wellness-at-work-backend",
+  "version": "1.0.0",
+  "description": "WellnessAtWork — Complete Backend Implementation (Case Study 72)",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch --watch-path=src src/server.js",
+    "seed": "node scripts/seed.js",
+    "test:api": "bash scripts/test_api.sh"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "firebase-admin": "^13.2.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.12.1",
+    "morgan": "^1.10.0",
+    "pdfkit": "^0.16.0",
+    "socket.io": "^4.8.1",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}

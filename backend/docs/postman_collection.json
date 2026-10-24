@@ -1,0 +1,162 @@
+{
+  "info": {
+    "name": "WellnessAtWork API Collection",
+    "description": "Complete Postman collection for WellnessAtWork (Case Study 72) with environment variables and testing scripts.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Employee Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"bhuvisha.gohil@company.com\",\n  \"password\": \"Wellness#2026!\"\n}"
+            },
+            "url": "http://localhost:7500/api/auth/login"
+          }
+        },
+        {
+          "name": "Admin Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin.hr@company.com\",\n  \"password\": \"AdminPassword#2026\"\n}"
+            },
+            "url": "http://localhost:7500/api/auth/login"
+          }
+        },
+        {
+          "name": "Get Authenticated User (Me)",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:7500/api/auth/me"
+          }
+        }
+      ]
+    },
+    {
+      "name": "User & Dashboard",
+      "item": [
+        {
+          "name": "Get Aggregated Dashboard",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:7500/api/user/dashboard"
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Bhuvisha Manish Gohil\",\n  \"department\": \"Engineering (Frontend)\"\n}"
+            },
+            "url": "http://localhost:7500/api/user/profile"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Challenges",
+      "item": [
+        {
+          "name": "List Challenges",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:7500/api/challenges"
+          }
+        },
+        {
+          "name": "Join 30-Day Walking Challenge",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:7500/api/challenges/30-day-walking/join"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Activities",
+      "item": [
+        {
+          "name": "Log 10,000 Steps Activity",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activityType\": \"Walking\",\n  \"value\": \"10,000\",\n  \"durationMinutes\": 45,\n  \"challengeId\": \"30-day-walking\"\n}"
+            },
+            "url": "http://localhost:7500/api/activities/log"
+          }
+        },
+        {
+          "name": "Get Activity Logs",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:7500/api/activities"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Leaderboard",
+      "item": [
+        {
+          "name": "Overall Leaderboard",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:7500/api/leaderboard"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rewards",
+      "item": [
+        {
+          "name": "Get Rewards Catalog",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:7500/api/rewards"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reports (Admin)",
+      "item": [
+        {
+          "name": "Participation Report",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:7500/api/reports/participation"
+          }
+        },
+        {
+          "name": "Export Participation CSV",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:7500/api/reports/participation/export?format=csv"
+          }
+        },
+        {
+          "name": "Export Participation PDF",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:7500/api/reports/participation/export?format=pdf"
+          }
+        }
+      ]
+    }
+  ]
+}

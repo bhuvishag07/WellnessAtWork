@@ -1,0 +1,178 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ink: #111111;
+  --paper: #F6EFDD;
+  --butter: #F2D98B;
+  --rose: #E58FA9;
+  --sage: #A8D5BA;
+  --peri: #B9C4E8;
+  --blush: #EFCAD4;
+  --indigo: #5F70B8;
+  --sticky: #F3E6B8;
+  --muted: #6B6478;
+}
+
+@layer base {
+  body {
+    background-color: var(--paper);
+    color: var(--ink);
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-weight: 400;
+    overflow-x: hidden;
+    cursor: default;
+  }
+
+  /* Space Grotesk Display Headings & Big Numbers */
+  h1, h2, h3, h4, h5, h6, .font-display {
+    font-family: 'Space Grotesk', -apple-system, sans-serif;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+
+  /* Small uppercase sticker label */
+  .sticker-label {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  p, span, label, div {
+    cursor: default;
+  }
+
+  a, button, input[type="button"], input[type="submit"], input[type="checkbox"], select, [role="button"] {
+    cursor: pointer;
+  }
+}
+
+/* Tabular numerals for stats, leaderboards, points, and table data */
+.tabular-nums, .font-tabular, table, [data-tabular] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sticker Brutalist surface wrappers for compatibility */
+.glass-panel, .glass-panel-elevated {
+  background-color: #FFFFFF;
+  border: 3px solid #111111;
+  box-shadow: 6px 6px 0 #111111;
+  border-radius: 0px;
+}
+
+.glass-panel-tint {
+  background-color: #F2D98B;
+  border: 3px solid #111111;
+  box-shadow: 6px 6px 0 #111111;
+  border-radius: 0px;
+}
+
+.glass-card-interactive {
+  background-color: #FFFFFF;
+  border: 3px solid #111111;
+  box-shadow: 6px 6px 0 #111111;
+  border-radius: 0px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.glass-card-interactive:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 8px 8px 0 #111111;
+}
+
+.glass-pill {
+  background-color: #FFFFFF;
+  border: 3px solid #111111;
+  color: #111111;
+  box-shadow: 3px 3px 0 #111111;
+  border-radius: 0px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+}
+
+.glass-input {
+  background-color: #FFFFFF;
+  border: 3px solid #111111;
+  border-radius: 0px;
+  color: #111111;
+  transition: all 0.15s ease;
+  cursor: text;
+  box-shadow: 3px 3px 0 #111111;
+}
+
+.glass-input:focus {
+  outline: none;
+  border-color: #5F70B8;
+  box-shadow: 4px 4px 0 #111111;
+}
+
+/* Ambient background is disabled per brutalist instructions (no gradients, no blur) */
+.ambient-orb {
+  display: none !important;
+}
+
+/* Sticker Buttons */
+.btn-primary-lilac {
+  background-color: #E58FA9;
+  color: #111111;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  border-radius: 0px;
+  border: 3px solid #111111;
+  box-shadow: 3px 3px 0 #111111;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+}
+
+.btn-primary-lilac:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 #111111;
+}
+
+.btn-primary-lilac:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.btn-glass {
+  background-color: #FFFFFF;
+  border: 3px solid #111111;
+  color: #111111;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  border-radius: 0px;
+  box-shadow: 3px 3px 0 #111111;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+}
+
+.btn-glass:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 #111111;
+  background-color: #F6EFDD;
+}
+
+.btn-glass:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+/* Soft Sticker Brutalist Scrollbar */
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+::-webkit-scrollbar-track {
+  background: #F6EFDD;
+  border-left: 2px solid #111111;
+}
+::-webkit-scrollbar-thumb {
+  background: #F2D98B;
+  border: 2px solid #111111;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #E58FA9;
+}
