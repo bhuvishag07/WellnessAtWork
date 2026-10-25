@@ -40,5 +40,9 @@ backend/.env.*
 !backend/.env.*.example
 backend/serviceAccountKey.json
 
+# Process lock files
+backend-server.lock
+backend/backend-server.lock
+
 # macOS metadata
 Icon?
