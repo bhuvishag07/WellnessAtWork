@@ -11,12 +11,11 @@ import { useWellness } from '../context/WellnessContext';
 import {
   StickerCard,
   StickerButton,
-  Pill,
-  ProgressBar
+  Pill
 } from '../components/ui';
 
 export const ChallengesPage = () => {
-  const { challenges, joinChallenge } = useWellness();
+  const { challenges, catalogStatus, joinChallenge, refreshBackendData } = useWellness();
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -124,27 +123,43 @@ export const ChallengesPage = () => {
       </div>
 
       {/* Challenges Grid */}
-      {filteredChallenges.length === 0 ? (
+      {catalogStatus.challenges.loading ? (
+        <p role="status" className="py-10 text-center font-display text-sm font-bold text-ink">
+          Loading challenges...
+        </p>
+      ) : catalogStatus.challenges.error ? (
+        <StickerCard tone="white" shadow="sticker" className="p-8 text-center space-y-3">
+          <p role="alert" className="text-sm font-bold text-ink">
+            Could not load challenges: {catalogStatus.challenges.error}
+          </p>
+          <StickerButton variant="secondary" onClick={refreshBackendData}>
+            Try Again
+          </StickerButton>
+        </StickerCard>
+      ) : filteredChallenges.length === 0 ? (
         <StickerCard tone="white" shadow="sticker" className="p-12 text-center space-y-3">
           <Trophy className="w-10 h-10 text-ink mx-auto" />
-          <h4 className="text-base font-display font-bold text-ink">No challenges found</h4>
+          <h4 className="text-base font-display font-bold text-ink">
+            {challenges.length ? 'No challenges found' : 'No challenges are available yet'}
+          </h4>
           <p className="text-xs text-muted">
-            Try adjusting your search criteria or switch back to the "All" tab.
+            {challenges.length
+              ? 'Try adjusting your search criteria or switch back to the "All" tab.'
+              : 'Check back later for new wellness challenges.'}
           </p>
-          <StickerButton
-            variant="secondary"
-            onClick={() => { setActiveTab('All'); setSearchQuery(''); setSelectedCategory('All'); }}
-            className="mt-2"
-          >
-            Reset Filters
-          </StickerButton>
+          {challenges.length > 0 && (
+            <StickerButton
+              variant="secondary"
+              onClick={() => { setActiveTab('All'); setSearchQuery(''); setSelectedCategory('All'); }}
+              className="mt-2"
+            >
+              Reset Filters
+            </StickerButton>
+          )}
         </StickerCard>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredChallenges.map((challenge, idx) => {
-            const tones = ['white', 'sage', 'peri', 'blush', 'butter'];
-            const cardTone = tones[idx % tones.length];
-
+          {filteredChallenges.map((challenge) => {
             return (
               <StickerCard
                 key={challenge.id}

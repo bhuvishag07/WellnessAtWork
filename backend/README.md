@@ -108,14 +108,24 @@ backend/
 cd backend
 npm install
 
-# Seed the database
+# Seed all demo data (destructive; development databases only)
 npm run seed
+
+# Safely add missing catalog records without changing existing records or user data
+npm run seed:catalog
 
 # Start development server
 npm run dev
 # OR production start
 npm start
 ```
+
+`seed:catalog` connects to `MONGODB_URI` and safely inserts missing records for
+all five sections (challenges, wellness sessions, resources, rewards, and baseline
+colleague users with real activity logs and point transactions for the leaderboard).
+It is idempotent and non-destructive: it checks if records already exist before
+inserting, never clears or drops collections, and never alters or deletes existing
+user accounts or production data.
 
 ### 4.3 Environment Variables (`backend/.env`)
 ```text

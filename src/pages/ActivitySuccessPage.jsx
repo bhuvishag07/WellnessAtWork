@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Trophy, ArrowRight, CheckCircle2, LayoutDashboard, Share2, Flame } from 'lucide-react';
+import { Trophy, CheckCircle2, LayoutDashboard, Flame } from 'lucide-react';
 import { useWellness } from '../context/WellnessContext';
 import {
   StickerCard,
@@ -14,8 +14,8 @@ export const ActivitySuccessPage = () => {
 
   // Retrieve last logged activity or fallback
   const lastLog = JSON.parse(sessionStorage.getItem('last_logged_activity') || '{}');
-  const pointsEarned = lastLog.points || 100;
-  const challengeTitle = lastLog.challengeTitle || "30-Day Walking Challenge";
+  const pointsEarned = Number(lastLog.points ?? 0);
+  const challengeTitle = lastLog.challengeTitle || 'your wellness activity';
 
   useEffect(() => {
     try {
@@ -49,7 +49,7 @@ export const ActivitySuccessPage = () => {
             +{pointsEarned} Points Added to Ledger
           </Pill>
           <h2 className="text-2xl sm:text-3xl font-display font-bold text-ink tracking-tight pt-1">
-            Great work, {user?.firstName || 'Bhuvisha'}!
+            Great work, {user?.firstName || 'there'}!
           </h2>
           <p className="text-xs text-ink/80 max-w-sm mx-auto leading-relaxed">
             Your activity was successfully synchronized and recorded for <strong>{challengeTitle}</strong>.
@@ -63,7 +63,7 @@ export const ActivitySuccessPage = () => {
               Updated Balance
             </span>
             <span className="text-lg font-display font-bold text-ink mt-0.5 block tabular-nums">
-              {user?.totalPoints || 950} pts
+              {user?.totalPoints ?? 0} pts
             </span>
             <span className="text-[10px] font-bold text-ink tabular-nums">
               +{pointsEarned} just earned
@@ -75,7 +75,7 @@ export const ActivitySuccessPage = () => {
               Company Rank
             </span>
             <span className="text-lg font-display font-bold text-ink mt-0.5 block tabular-nums">
-              #{user?.currentRank || 8}
+              #{user?.currentRank ?? '—'}
             </span>
             <span className="text-[10px] text-ink font-semibold">
               Engineering Div
@@ -88,7 +88,7 @@ export const ActivitySuccessPage = () => {
             </span>
             <span className="text-lg font-display font-bold text-ink mt-0.5 block flex items-center gap-1 tabular-nums">
               <Flame className="w-4 h-4 text-ink" />
-              {user?.streakDays || 15} Days
+              {user?.streakDays ?? 0} Days
             </span>
             <span className="text-[10px] text-ink/80 font-medium">
               Streak preserved
@@ -101,11 +101,11 @@ export const ActivitySuccessPage = () => {
           <div className="flex items-center justify-between text-xs font-display font-bold">
             <span className="text-ink">Tier Advancement</span>
             <span className="tabular-nums text-ink">
-              {user?.totalPoints || 950} / 1500 pts
+              {user?.totalPoints ?? 0} / 1500 pts
             </span>
           </div>
           <ProgressBar
-            progress={user?.totalPoints || 950}
+            progress={user?.totalPoints ?? 0}
             max={1500}
             className="w-full"
             fillColor="bg-rose"

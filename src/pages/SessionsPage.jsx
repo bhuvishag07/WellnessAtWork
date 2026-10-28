@@ -16,7 +16,7 @@ import {
 import Modal from '../components/Modal';
 
 export const SessionsPage = () => {
-  const { sessions, bookSession, cancelSessionBooking, user } = useWellness();
+  const { sessions, catalogStatus, bookSession, cancelSessionBooking, refreshBackendData, user } = useWellness();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedSessionToBook, setSelectedSessionToBook] = useState(null);
   const [confirming, setConfirming] = useState(false);
@@ -67,7 +67,7 @@ export const SessionsPage = () => {
               Your Scheduled Care
             </span>
             <span className="text-xs font-bold font-display text-ink">
-              {user?.upcomingSessionsCount || 2} Upcoming Sessions
+              {user?.upcomingSessionsCount ?? 0} Upcoming Sessions
             </span>
           </div>
         </div>
@@ -91,6 +91,29 @@ export const SessionsPage = () => {
       </div>
 
       {/* Sessions Grid */}
+      {catalogStatus.sessions.loading ? (
+        <p role="status" className="py-10 text-center font-display text-sm font-bold text-ink">
+          Loading wellness sessions...
+        </p>
+      ) : catalogStatus.sessions.error ? (
+        <StickerCard tone="white" shadow="sticker" className="p-8 text-center space-y-3">
+          <p role="alert" className="text-sm font-bold text-ink">
+            Could not load wellness sessions: {catalogStatus.sessions.error}
+          </p>
+          <StickerButton variant="secondary" onClick={refreshBackendData}>
+            Try Again
+          </StickerButton>
+        </StickerCard>
+      ) : filteredSessions.length === 0 ? (
+        <StickerCard tone="white" shadow="sticker" className="p-8 text-center space-y-2">
+          <h3 className="font-display text-base font-bold text-ink">
+            {sessions.length ? 'No sessions in this category' : 'No wellness sessions are available yet'}
+          </h3>
+          <p className="text-xs text-muted">
+            {sessions.length ? 'Choose another category to see available sessions.' : 'Check back later for new sessions.'}
+          </p>
+        </StickerCard>
+      ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {filteredSessions.map((session) => (
           <StickerCard
@@ -201,6 +224,7 @@ export const SessionsPage = () => {
           </StickerCard>
         ))}
       </div>
+      )}
 
       {/* Booking Confirmation Modal */}
       <Modal

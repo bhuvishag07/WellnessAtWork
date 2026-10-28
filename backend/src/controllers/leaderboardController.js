@@ -1,6 +1,7 @@
 import User from '../models/User.js';
 import UserChallenge from '../models/UserChallenge.js';
 import Challenge from '../models/Challenge.js';
+import ActivityLog from '../models/ActivityLog.js';
 import Team from '../models/Team.js';
 import { successResponse, errorResponse } from '../utils/apiResponse.js';
 
@@ -20,27 +21,50 @@ export const getLeaderboard = async (req, res, next) => {
       ];
     }
 
-    const employees = await User.find(query)
-      .sort({ totalPoints: -1, createdAt: 1 })
-      .limit(100);
+    const employees = await User.find(query).limit(100);
+
+    const userIds = employees.map(emp => emp._id);
+    const activityTotals = await ActivityLog.aggregate([
+      { $match: { userId: { $in: userIds } } },
+      {
+        $group: {
+          _id: '$userId',
+          totalActivityPoints: { $sum: '$pointsEarned' },
+          activityCount: { $sum: 1 },
+          lastActive: { $max: '$timestamp' }
+        }
+      }
+    ]);
+    const activityMap = new Map(activityTotals.map(item => [item._id.toString(), item]));
 
     const currentUserId = req.user ? req.user._id.toString() : null;
 
-    const overall = employees.map((emp, index) => {
+    const overall = employees.map((emp) => {
       const isCurrentUser = currentUserId === emp._id.toString();
       const hideName = emp.privacySettings?.leaderboardVisibility === false && !isCurrentUser;
+      const activity = activityMap.get(emp._id.toString());
+      const points = Math.max(emp.totalPoints || 0, activity?.totalActivityPoints || 0);
 
       return {
-        rank: index + 1,
         id: emp._id.toString(),
         name: hideName ? 'Anonymous Colleague' : emp.fullName,
         department: emp.department,
-        points: emp.totalPoints,
-        progress: Math.min(100, Math.round((emp.totalPoints / 1500) * 100)),
+        points,
+        activityCount: activity?.activityCount || 0,
+        progress: Math.min(100, Math.round((points / 1500) * 100)),
         streak: emp.streakDays,
         badge: emp.tier,
         avatar: emp.avatar,
-        isCurrentUser
+        isCurrentUser,
+        createdAt: emp.createdAt
+      };
+    })
+    .sort((a, b) => b.points - a.points || new Date(a.createdAt) - new Date(b.createdAt))
+    .map((emp, index) => {
+      const { createdAt, ...rest } = emp;
+      return {
+        rank: index + 1,
+        ...rest
       };
     });
 
@@ -68,25 +92,51 @@ export const getChallengeLeaderboard = async (req, res, next) => {
     }
 
     const enrollments = await UserChallenge.find({ challengeId: challenge._id })
-      .populate('userId')
+      .populate('userId', 'fullName department avatar tier streakDays privacySettings')
       .sort({ currentProgress: -1, lastLoggedAt: -1 })
       .limit(50);
 
     const currentUserId = req.user ? req.user._id.toString() : null;
+    const enrolledUserIds = enrollments.filter(e => e.userId).map(e => e.userId._id);
+    const activityTotals = await ActivityLog.aggregate([
+      {
+        $match: {
+          challengeId: challenge._id,
+          userId: { $in: enrolledUserIds }
+        }
+      },
+      {
+        $group: {
+          _id: '$userId',
+          points: { $sum: '$pointsEarned' },
+          activityValue: { $sum: '$numericValue' },
+          activityCount: { $sum: 1 }
+        }
+      }
+    ]);
+    const totalsByUserId = new Map(
+      activityTotals.map(item => [item._id.toString(), item])
+    );
 
     const challengeLeaderboard = enrollments
       .filter(e => e.userId)
       .map((e, index) => {
         const emp = e.userId;
         const isCurrentUser = currentUserId === emp._id.toString();
+        const hideName = emp.privacySettings?.leaderboardVisibility === false && !isCurrentUser;
+        const totals = totalsByUserId.get(emp._id.toString());
 
         return {
           rank: index + 1,
           id: emp._id.toString(),
-          name: isCurrentUser ? `${emp.fullName} (You)` : emp.fullName,
+          name: hideName ? 'Anonymous Colleague' : isCurrentUser ? `${emp.fullName} (You)` : emp.fullName,
           department: emp.department,
           progress: e.currentProgress,
-          points: Math.round(e.currentProgress * 2.8),
+          points: totals?.points ?? 0,
+          activityValue: totals?.activityValue ?? 0,
+          activityCount: totals?.activityCount ?? 0,
+          streak: emp.streakDays,
+          badge: emp.tier,
           avatar: emp.avatar,
           isCurrentUser
         };

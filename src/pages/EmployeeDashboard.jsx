@@ -48,11 +48,11 @@ export const EmployeeDashboard = () => {
     { day: "S", completed: false },
   ];
 
-  const totalPoints = user?.totalPoints || 950;
-  const streakCount = user?.streakDays || 15;
-  const currentRank = user?.currentRank || 8;
-  const activeCount = user?.activeChallengesCount || 3;
-  const sessionsCount = user?.upcomingSessionsCount || 2;
+  const totalPoints = user?.totalPoints ?? 0;
+  const streakCount = user?.streakDays ?? 0;
+  const currentRank = user?.currentRank;
+  const activeCount = user?.activeChallengesCount ?? 0;
+  const sessionsCount = user?.upcomingSessionsCount ?? 0;
 
   return (
     <div className="space-y-6 text-left">
@@ -64,14 +64,14 @@ export const EmployeeDashboard = () => {
             {/* Tier Pill */}
             <div>
               <Pill tone="white" className="border-[3px] border-ink text-xs">
-                {user?.tier || 'SILVER PIONEER'}
+                {user?.tier || 'GETTING STARTED'}
               </Pill>
             </div>
 
             {/* Greeting */}
             <div>
               <h1 className="text-2xl sm:text-3xl lg:text-[34px] font-display font-bold text-ink leading-tight tracking-tight">
-                Good morning, {user?.firstName || 'Bhuvisha'}
+                Good morning, {user?.firstName || 'there'}
               </h1>
               <p className="text-xs sm:text-sm font-medium text-ink mt-1">
                 You're on a {streakCount}-day wellness streak. Ready for today's micro-movement?
@@ -154,7 +154,7 @@ export const EmployeeDashboard = () => {
         <StickerCard tone="peri" shadow="sticker" className="p-3.5 sm:p-4.5">
           <StatCell
             label="CURRENT RANK"
-            value={`#${currentRank}`}
+            value={currentRank ? `#${currentRank}` : '—'}
             subline="Top 5%, Engineering department"
             footer="Climbed +2 places"
           />

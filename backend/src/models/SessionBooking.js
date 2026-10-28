@@ -10,7 +10,7 @@ const sessionBookingSchema = new mongoose.Schema(
     category: {
       type: String,
       required: true,
-      enum: ['1-on-1 Counseling', 'Yoga / Desk Stretching', 'Guided Meditation', 'Other']
+      enum: ['1-on-1 Counseling', 'Yoga / Desk Stretching', 'Guided Meditation', 'Nutrition & Vitality', 'Other']
     },
     categoryBadge: {
       type: String,

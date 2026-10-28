@@ -10,13 +10,12 @@ import { useWellness } from '../context/WellnessContext';
 import {
   StickerCard,
   StickerButton,
-  Pill,
-  ProgressBar
+  Pill
 } from '../components/ui';
 import Modal from '../components/Modal';
 
 export const RewardsPage = () => {
-  const { user, rewards, redeemReward } = useWellness();
+  const { user, rewards, catalogStatus, redeemReward, refreshBackendData } = useWellness();
   const [selectedReward, setSelectedReward] = useState(null);
   const [redeeming, setRedeeming] = useState(false);
 
@@ -65,7 +64,7 @@ export const RewardsPage = () => {
             </span>
             <div className="flex items-baseline gap-1.5">
               <span className="text-2xl font-display font-bold tabular-nums text-ink">
-                {user?.totalPoints || 950}
+                {user?.totalPoints ?? 0}
               </span>
               <span className="text-xs font-bold font-display text-ink">
                 Points Available
@@ -76,6 +75,25 @@ export const RewardsPage = () => {
       </div>
 
       {/* Rewards Grid */}
+      {catalogStatus.rewards.loading ? (
+        <p role="status" className="py-10 text-center font-display text-sm font-bold text-ink">
+          Loading rewards...
+        </p>
+      ) : catalogStatus.rewards.error ? (
+        <StickerCard tone="white" shadow="sticker" className="p-8 text-center space-y-3">
+          <p role="alert" className="text-sm font-bold text-ink">
+            Could not load rewards: {catalogStatus.rewards.error}
+          </p>
+          <StickerButton variant="secondary" onClick={refreshBackendData}>
+            Try Again
+          </StickerButton>
+        </StickerCard>
+      ) : rewards.length === 0 ? (
+        <StickerCard tone="white" shadow="sticker" className="p-8 text-center space-y-2">
+          <h3 className="font-display text-base font-bold text-ink">No rewards are available yet</h3>
+          <p className="text-xs text-muted">Check back later for new rewards in the store.</p>
+        </StickerCard>
+      ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {rewards.map((reward) => {
           const hasEnough = (user?.totalPoints || 0) >= reward.pointsCost;
@@ -167,6 +185,7 @@ export const RewardsPage = () => {
           );
         })}
       </div>
+      )}
 
       {/* Redemption Confirmation Modal */}
       <Modal
@@ -199,7 +218,7 @@ export const RewardsPage = () => {
             <div className="p-3 border-[2px] border-ink bg-white text-xs font-display font-bold text-ink space-y-1">
               <div className="flex justify-between">
                 <span>Current Points:</span>
-                <span className="tabular-nums">{user?.totalPoints || 950} pts</span>
+                <span className="tabular-nums">{user?.totalPoints ?? 0} pts</span>
               </div>
               <div className="flex justify-between text-rose">
                 <span>Points to Deduct:</span>
@@ -207,7 +226,7 @@ export const RewardsPage = () => {
               </div>
               <div className="flex justify-between pt-1 border-t-2 border-dashed border-ink/30 text-ink">
                 <span>Remaining Balance:</span>
-                <span className="tabular-nums">{(user?.totalPoints || 950) - selectedReward.pointsCost} pts</span>
+                <span className="tabular-nums">{(user?.totalPoints ?? 0) - selectedReward.pointsCost} pts</span>
               </div>
             </div>
 

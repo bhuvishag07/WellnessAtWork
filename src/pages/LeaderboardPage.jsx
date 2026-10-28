@@ -14,9 +14,9 @@ import {
 import { api } from '../services/api';
 
 export const LeaderboardPage = () => {
-  const { leaderboardData, user, challenges } = useWellness();
+  const { leaderboardData, user, challenges, catalogStatus, refreshBackendData } = useWellness();
   const [boardType, setBoardType] = useState('overall');
-  const [selectedChallengeId, setSelectedChallengeId] = useState('30-day-walking');
+  const [selectedChallengeId, setSelectedChallengeId] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -30,77 +30,41 @@ export const LeaderboardPage = () => {
     setChallengeError(null);
     api.getChallengeLeaderboard(challengeId)
       .then((res) => {
-        const raw = res?.data?.leaderboard || [];
-        if (raw.length > 0) {
-          const formatted = raw.map((item, idx) => ({
-            rank: item.rank || idx + 1,
-            id: item.id || `cl-${idx}`,
-            name: item.name,
-            department: item.department || 'General',
-            points: item.points || Math.round((item.progress || 0) * 2.8),
-            streak: item.progress ? `${item.progress}% done` : (item.steps ? `${item.steps} steps` : 'Active'),
-            badge: item.badge || 'Challenge Contender',
-            avatar: item.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-            isCurrentUser: item.isCurrentUser
-          }));
-          setChallengeBoard(formatted);
-        } else {
-          // Fallback to challenge peerLeaderboard from demo / context data
-          const currentCh = (challenges || []).find(c => c.id === challengeId || c.slug === challengeId) || challenges?.[0];
-          if (currentCh?.peerLeaderboard && currentCh.peerLeaderboard.length > 0) {
-            const fallback = currentCh.peerLeaderboard.map((item, idx) => ({
-              rank: item.rank || idx + 1,
-              id: item.id || `peer-${idx}`,
-              name: item.name,
-              department: item.department || 'General',
-              points: item.points || 250,
-              streak: item.steps ? `${item.steps} steps` : `${item.progress || 60}% done`,
-              badge: 'Walking Club',
-              avatar: item.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-              isCurrentUser: item.isCurrentUser
-            }));
-            setChallengeBoard(fallback);
-          } else {
-            setChallengeBoard([]);
-          }
-        }
+        const raw = res?.data?.leaderboard;
+        if (!Array.isArray(raw)) throw new Error('Unexpected challenge leaderboard response.');
+        setChallengeBoard(raw.map((item, idx) => ({
+          rank: item.rank || idx + 1,
+          id: item.id,
+          name: item.name,
+          department: item.department,
+          points: Number(item.points ?? 0),
+          streak: item.progress === undefined ? item.streak : `${item.progress}% done`,
+          badge: item.badge,
+          avatar: item.avatar,
+          isCurrentUser: item.isCurrentUser
+        })));
         setLoadingChallenge(false);
       })
-      .catch(() => {
-        // Fallback to challenge peerLeaderboard on error / offline mode
-        const currentCh = (challenges || []).find(c => c.id === challengeId || c.slug === challengeId) || challenges?.[0];
-        if (currentCh?.peerLeaderboard && currentCh.peerLeaderboard.length > 0) {
-          const fallback = currentCh.peerLeaderboard.map((item, idx) => ({
-            rank: item.rank || idx + 1,
-            id: item.id || `peer-${idx}`,
-            name: item.name,
-            department: item.department || 'General',
-            points: item.points || 250,
-            streak: item.steps ? `${item.steps} steps` : `${item.progress || 60}% done`,
-            badge: 'Walking Club',
-            avatar: item.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-            isCurrentUser: item.isCurrentUser
-          }));
-          setChallengeBoard(fallback);
-          setChallengeError(null);
-        } else {
-          setChallengeError('Could not load challenge standings');
-          setChallengeBoard([]);
-        }
+      .catch((error) => {
+        setChallengeError(error.message || 'Could not load challenge standings.');
         setLoadingChallenge(false);
       });
-  }, [challenges]);
+  }, []);
+
+  const challengeOptionId = selectedChallengeId || challenges[0]?.slug || challenges[0]?.id || '';
 
   useEffect(() => {
-    if (boardType === 'challenge') {
-      fetchChallengeLeaderboard(selectedChallengeId);
+    if (boardType === 'challenge' && challengeOptionId) {
+      fetchChallengeLeaderboard(challengeOptionId);
     }
-  }, [boardType, selectedChallengeId, fetchChallengeLeaderboard]);
+  }, [boardType, challengeOptionId, fetchChallengeLeaderboard]);
 
   const departments = ['All', 'Engineering', 'Product Design', 'Product Ops', 'Marketing', 'Human Resources', 'Finance'];
 
   // Base list selected by active tab
   const rawList = boardType === 'challenge' ? challengeBoard : (leaderboardData.overall || []);
+  const boardLoading = boardType === 'challenge' ? loadingChallenge : catalogStatus.leaderboard.loading;
+  const boardError = boardType === 'challenge' ? challengeError : catalogStatus.leaderboard.error;
   let list = rawList;
 
   // Filter department
@@ -252,7 +216,10 @@ export const LeaderboardPage = () => {
               Overall Leaderboard
             </button>
             <button
-              onClick={() => setBoardType('challenge')}
+              onClick={() => {
+                setBoardType('challenge');
+                setSelectedChallengeId('');
+              }}
               className={`px-3.5 py-1.5 border-[3px] border-ink font-display text-xs font-bold transition-all cursor-pointer ${
                 boardType === 'challenge' ? 'bg-ink text-butter shadow-sticker-sm' : 'bg-white text-ink shadow-sticker-sm hover:bg-paper'
               }`}
@@ -261,11 +228,12 @@ export const LeaderboardPage = () => {
             </button>
             {boardType === 'challenge' && (
               <select
-                value={selectedChallengeId}
+                value={challengeOptionId}
                 onChange={(e) => setSelectedChallengeId(e.target.value)}
                 className="px-3 py-1.5 border-[3px] border-ink bg-butter font-display text-xs font-bold text-ink shadow-sticker-sm cursor-pointer"
               >
-                {(challenges || []).map((ch) => (
+                {challenges.length === 0 && <option value="">No challenges available</option>}
+                {challenges.map((ch) => (
                   <option key={ch.id || ch.slug} value={ch.slug || ch.id}>
                     {ch.title}
                   </option>
@@ -302,19 +270,21 @@ export const LeaderboardPage = () => {
         </div>
 
         {/* Ranking Table or Loading/Empty States */}
-        {loadingChallenge ? (
+        {boardLoading ? (
           <div className="py-12 text-center space-y-3">
             <RefreshCw className="w-6 h-6 animate-spin text-ink mx-auto" />
             <p className="font-display text-xs font-bold text-ink">
-              Loading challenge standings...
+              {boardType === 'challenge' ? 'Loading challenge standings...' : 'Loading leaderboard...'}
             </p>
           </div>
-        ) : challengeError ? (
+        ) : boardError ? (
           <div className="py-8 px-4 border-[3px] border-ink bg-rose/20 text-center space-y-2">
             <AlertCircle className="w-6 h-6 text-ink mx-auto" />
-            <p className="font-display text-xs font-bold text-ink">{challengeError}</p>
+            <p role="alert" className="font-display text-xs font-bold text-ink">{boardError}</p>
             <button
-              onClick={() => fetchChallengeLeaderboard(selectedChallengeId)}
+              onClick={() => boardType === 'challenge'
+                ? fetchChallengeLeaderboard(challengeOptionId)
+                : refreshBackendData()}
               className="px-3 py-1 border-2 border-ink bg-white font-display text-xs font-bold shadow-sticker-sm hover:bg-butter cursor-pointer"
             >
               Retry
@@ -324,12 +294,22 @@ export const LeaderboardPage = () => {
           <div className="py-12 text-center space-y-2 border-[2px] border-dashed border-ink/40">
             <Trophy className="w-8 h-8 text-ink/40 mx-auto" />
             <p className="font-display text-xs font-bold text-ink">
-              No participants found matching the current filters.
+              {boardType === 'challenge' && !challengeOptionId
+                ? 'No challenges are available to rank yet.'
+                : boardType === 'challenge'
+                  ? 'No users have enrolled in this challenge yet.'
+                  : rawList.length === 0
+                    ? 'No employee leaderboard records are available yet.'
+                    : 'No participants found matching the current filters.'}
             </p>
             <p className="text-[11px] text-muted">
               {boardType === 'challenge'
-                ? 'Be the first to log activity for this challenge!'
-                : 'Try adjusting your search query or department filter.'}
+                ? challengeOptionId
+                  ? 'Enroll and log activity to appear in the challenge standings.'
+                  : 'Challenges will appear here when they are published.'
+                : rawList.length === 0
+                  ? 'Earn points by logging real wellness activities.'
+                  : 'Try adjusting your search query or department filter.'}
             </p>
           </div>
         ) : (

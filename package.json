@@ -10,6 +10,7 @@
     "dev:backend": "npm --prefix backend run dev",
     "start:backend": "npm --prefix backend start",
     "test:backend-api": "npm --prefix backend run test:api",
+    "seed:backend-catalog": "npm --prefix backend run seed:catalog",
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview"

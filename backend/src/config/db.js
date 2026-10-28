@@ -71,14 +71,16 @@ export const connectDB = async () => {
   // Attempt primary connection (MongoDB Atlas)
   if (primaryUri) {
     await configureDnsForSrv(primaryUri);
-    console.log(`[MongoDB] Connecting to primary database: ${maskMongoUri(primaryUri)}`);
-
     try {
-      const conn = await mongoose.connect(primaryUri, {
+      const connectOptions = {
         serverSelectionTimeoutMS: isProduction ? 15000 : 7000,
         connectTimeoutMS: isProduction ? 15000 : 7000,
         socketTimeoutMS: 45000
-      });
+      };
+      if (process.env.MONGODB_DB_NAME) {
+        connectOptions.dbName = process.env.MONGODB_DB_NAME;
+      }
+      const conn = await mongoose.connect(primaryUri, connectOptions);
       await conn.connection.db.admin().command({ ping: 1 });
       console.log(`[MongoDB] Connected successfully to Atlas cluster: ${conn.connection.host}/${conn.connection.name}`);
       return conn;

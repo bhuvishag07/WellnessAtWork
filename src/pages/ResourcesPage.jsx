@@ -18,8 +18,7 @@ import {
 import Modal from '../components/Modal';
 
 export const ResourcesPage = () => {
-  const { wellnessResources } = useWellness();
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const { wellnessResources, catalogStatus, refreshBackendData } = useWellness();
   const [activeArticle, setActiveArticle] = useState(null);
 
   // Interactive Breathing Widget State
@@ -274,6 +273,25 @@ export const ResourcesPage = () => {
           Curated Health Library
         </h3>
 
+        {catalogStatus.resources.loading ? (
+          <p role="status" className="py-8 text-center font-display text-sm font-bold text-ink">
+            Loading wellness resources...
+          </p>
+        ) : catalogStatus.resources.error ? (
+          <StickerCard tone="white" shadow="sticker" className="p-8 text-center space-y-3">
+            <p role="alert" className="text-sm font-bold text-ink">
+              Could not load wellness resources: {catalogStatus.resources.error}
+            </p>
+            <StickerButton variant="secondary" onClick={refreshBackendData}>
+              Try Again
+            </StickerButton>
+          </StickerCard>
+        ) : wellnessResources.length === 0 ? (
+          <StickerCard tone="white" shadow="sticker" className="p-8 text-center space-y-2">
+            <h4 className="font-display text-base font-bold text-ink">No wellness resources are available yet</h4>
+            <p className="text-xs text-muted">Check back later for new articles and guides.</p>
+          </StickerCard>
+        ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {wellnessResources.map((res) => (
             <StickerCard
@@ -324,6 +342,7 @@ export const ResourcesPage = () => {
             </StickerCard>
           ))}
         </div>
+        )}
       </div>
 
       {/* Article Detail Modal */}

@@ -22,79 +22,35 @@ import { api } from '../services/api';
 export const ChallengeDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { challenges, deviceSync, setDeviceSync, dispatchToast } = useWellness();
+  const { challenges, catalogStatus, dispatchToast, refreshBackendData } = useWellness();
 
-  // Find challenge by id or fallback to 30-day walking challenge
-  const challenge = challenges.find(c => c.id === id) || challenges[0];
+  const challenge = challenges.find(c => c.id === id || c.mongoId === id);
 
-  const [syncingApple, setSyncingApple] = useState(false);
-  const [syncingFitbit, setSyncingFitbit] = useState(false);
-
-  const handleSyncApple = async () => {
-    setSyncingApple(true);
-    try {
-      const { api } = await import('../services/api');
-      const res = await api.syncWearable({
-        deviceType: 'appleHealth',
-        steps: 10240,
-        distanceKm: 7.4,
-        activeMinutes: 48,
-        restingHeartRate: 62
-      });
-      setSyncingApple(false);
-      setDeviceSync(prev => ({ ...prev, appleHealth: true, lastSynced: "Just now" }));
-      dispatchToast({
-        title: "Apple Health Synchronized 🍏",
-        message: res.message || "Fetched 10,240 steps from your Apple Watch. Activity updated!",
-        type: "success"
-      });
-    } catch {
-      setSyncingApple(false);
-      setDeviceSync(prev => ({ ...prev, appleHealth: true, lastSynced: "Just now" }));
-      dispatchToast({
-        title: "Apple Health Synchronized 🍏",
-        message: "Fetched 10,240 steps from your Apple Watch. Activity updated!",
-        type: "success"
-      });
-    }
+  const handleSyncApple = () => {
+    dispatchToast({
+      title: 'Apple Health Not Connected',
+      message: 'A device connection is not configured, so no activity was recorded.',
+      type: 'info'
+    });
   };
 
-  const handleSyncFitbit = async () => {
-    setSyncingFitbit(true);
-    try {
-      const { api } = await import('../services/api');
-      const res = await api.syncWearable({
-        deviceType: 'fitbit',
-        steps: 9850,
-        distanceKm: 6.9,
-        activeMinutes: 42,
-        restingHeartRate: 65
-      });
-      setSyncingFitbit(false);
-      setDeviceSync(prev => ({ ...prev, fitbit: true, lastSynced: "Just now" }));
-      dispatchToast({
-        title: "Fitbit Synchronized ⌚",
-        message: res.message || "Synced today's steps and resting heart rate data.",
-        type: "success"
-      });
-    } catch {
-      setSyncingFitbit(false);
-      setDeviceSync(prev => ({ ...prev, fitbit: true, lastSynced: "Just now" }));
-      dispatchToast({
-        title: "Fitbit Synchronized ⌚",
-        message: "Synced today's steps and resting heart rate data.",
-        type: "success"
-      });
-    }
+  const handleSyncFitbit = () => {
+    dispatchToast({
+      title: 'Fitbit Not Connected',
+      message: 'A device connection is not configured, so no activity was recorded.',
+      type: 'info'
+    });
   };
 
-  const milestones = challenge?.milestones || [
-    { day: 5, label: "5-Day Kickoff", completed: true, points: 50 },
-    { day: 10, label: "100k Steps Club", completed: true, points: 75 },
-    { day: 18, label: "Midpoint Momentum", completed: true, points: 75 },
-    { day: 25, label: "Peak Endurance", completed: false, points: 50 },
-    { day: 30, label: "30-Day Champion", completed: false, points: 50 },
-  ];
+  const milestones = (challenge?.milestones || []).map((milestone) => ({
+    ...milestone,
+    completed: Boolean(
+      challenge?.joined &&
+      challenge.totalDays > 0 &&
+      (challenge.progress || 0) >= (milestone.day / challenge.totalDays) * 100
+    )
+  }));
+  const completedMilestoneCount = milestones.filter(milestone => milestone.completed).length;
 
   // API-driven peer leaderboard state
   const [peerList, setPeerList] = useState([]);
@@ -102,57 +58,28 @@ export const ChallengeDetailsPage = () => {
   const [peerError, setPeerError] = useState(null);
 
   const fetchPeers = useCallback(async () => {
+    if (!challenge) return;
+
     setLoadingPeers(true);
     setPeerError(null);
     try {
-      const targetSlugOrId = challenge?.slug || challenge?._id || id || '30-day-walking';
+      const targetSlugOrId = challenge.slug || challenge.mongoId || challenge.id || id;
       const res = await api.getChallengeLeaderboard(targetSlugOrId);
-      const raw = res?.data?.leaderboard || [];
-      if (raw.length > 0) {
-        const peers = raw.map((p, idx) => ({
-          rank: p.rank || idx + 1,
-          id: p.id || `peer-${idx}`,
-          name: p.name,
-          department: p.department || 'General',
-          steps: p.progress ? `${Math.round(p.progress * 100).toLocaleString()}` : `${Math.round((p.points || 100) * 35).toLocaleString()}`,
-          points: p.points || Math.round((p.progress || 0) * 2.8),
-          avatar: p.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-          isCurrentUser: p.isCurrentUser
-        }));
-        setPeerList(peers);
-      } else if (challenge?.peerLeaderboard && challenge.peerLeaderboard.length > 0) {
-        const fallback = challenge.peerLeaderboard.map((p, idx) => ({
-          rank: p.rank || idx + 1,
-          id: p.id || `peer-${idx}`,
-          name: p.name,
-          department: p.department || 'General',
-          steps: p.steps || '10,000',
-          points: p.points || 250,
-          avatar: p.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-          isCurrentUser: p.isCurrentUser
-        }));
-        setPeerList(fallback);
-      } else {
-        setPeerList([]);
-      }
+      const raw = res?.data?.leaderboard;
+      if (!Array.isArray(raw)) throw new Error('Unexpected challenge leaderboard response.');
+      setPeerList(raw.map((peer, index) => ({
+        rank: peer.rank || index + 1,
+        id: peer.id,
+        name: peer.name,
+        department: peer.department,
+        activitySummary: `${Number(peer.activityValue ?? 0).toLocaleString()} ${challenge.unit || 'units'} (${peer.activityCount ?? 0} logs)`,
+        points: Number(peer.points ?? 0),
+        avatar: peer.avatar,
+        isCurrentUser: peer.isCurrentUser
+      })));
     } catch (err) {
-      if (challenge?.peerLeaderboard && challenge.peerLeaderboard.length > 0) {
-        const fallback = challenge.peerLeaderboard.map((p, idx) => ({
-          rank: p.rank || idx + 1,
-          id: p.id || `peer-${idx}`,
-          name: p.name,
-          department: p.department || 'General',
-          steps: p.steps || '10,000',
-          points: p.points || 250,
-          avatar: p.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-          isCurrentUser: p.isCurrentUser
-        }));
-        setPeerList(fallback);
-        setPeerError(null);
-      } else {
-        setPeerError(err.message || 'Failed to load challenge participants');
-        setPeerList([]);
-      }
+      setPeerError(err.message || 'Failed to load challenge participants.');
+      setPeerList([]);
     } finally {
       setLoadingPeers(false);
     }
@@ -161,6 +88,28 @@ export const ChallengeDetailsPage = () => {
   useEffect(() => {
     fetchPeers();
   }, [fetchPeers]);
+
+  if (catalogStatus.challenges.loading) {
+    return <p role="status" className="py-10 text-center font-display text-sm font-bold text-ink">Loading challenge...</p>;
+  }
+  if (catalogStatus.challenges.error) {
+    return (
+      <div className="mx-auto max-w-xl space-y-3 py-10 text-center">
+        <p role="alert" className="font-display text-sm font-bold text-ink">
+          Could not load challenges: {catalogStatus.challenges.error}
+        </p>
+        <StickerButton variant="secondary" onClick={refreshBackendData}>Try Again</StickerButton>
+      </div>
+    );
+  }
+  if (!challenge) {
+    return (
+      <div className="mx-auto max-w-xl space-y-3 py-10 text-center">
+        <p className="font-display text-sm font-bold text-ink">This challenge was not found.</p>
+        <StickerButton to="/challenges" variant="secondary">Back to Challenges</StickerButton>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 text-left">
@@ -277,7 +226,7 @@ export const ChallengeDetailsPage = () => {
                 </p>
               </div>
               <Pill tone="sage" className="border-2 border-ink text-[11px]">
-                3 of 5 Unlocked
+                {completedMilestoneCount} of {milestones.length} Unlocked
               </Pill>
             </div>
 
@@ -346,21 +295,20 @@ export const ChallengeDetailsPage = () => {
                         Apple Health
                       </h5>
                       <span className="text-[10px] font-bold text-ink font-display">
-                        Connected & Active
+                        Device sync unavailable
                       </span>
                     </div>
                   </div>
                   <button
                     onClick={handleSyncApple}
-                    disabled={syncingApple}
                     className="p-1.5 border-2 border-ink bg-white text-ink hover:bg-butter transition-colors cursor-pointer"
                     title="Force Apple Health Sync"
                   >
-                    <RefreshCw className={`w-3.5 h-3.5 ${syncingApple ? 'animate-spin' : ''}`} />
+                    <RefreshCw className="w-3.5 h-3.5" />
                   </button>
                 </div>
                 <p className="text-[11px] text-ink/75">
-                  Reads steps, walking distance, and active workout minutes from HealthKit.
+                  Device synchronization is not configured; no Apple Health data is read or recorded.
                 </p>
               </div>
 
@@ -376,21 +324,20 @@ export const ChallengeDetailsPage = () => {
                         Fitbit OS
                       </h5>
                       <span className="text-[10px] font-bold text-ink font-display">
-                        {deviceSync?.fitbit ? 'Connected' : 'Ready to pair'}
+                        Device sync unavailable
                       </span>
                     </div>
                   </div>
                   <button
                     onClick={handleSyncFitbit}
-                    disabled={syncingFitbit}
                     className="p-1.5 border-2 border-ink bg-white text-ink hover:bg-butter transition-colors cursor-pointer"
                     title="Sync Fitbit"
                   >
-                    <RefreshCw className={`w-3.5 h-3.5 ${syncingFitbit ? 'animate-spin' : ''}`} />
+                    <RefreshCw className="w-3.5 h-3.5" />
                   </button>
                 </div>
                 <p className="text-[11px] text-ink/75">
-                  Direct API OAuth sync for Fitbit Sense, Charge, and Versa bands.
+                  Device synchronization is not configured; no Fitbit data is read or recorded.
                 </p>
               </div>
             </div>
@@ -470,7 +417,7 @@ export const ChallengeDetailsPage = () => {
                           {peer.name}
                         </h5>
                         <p className="text-[10px] text-muted">
-                          {peer.department} • <span className="tabular-nums font-bold text-ink">{peer.steps}</span> steps
+                          {peer.department} • <span className="tabular-nums font-bold text-ink">{peer.activitySummary}</span>
                         </p>
                       </div>
                     </div>
@@ -490,7 +437,7 @@ export const ChallengeDetailsPage = () => {
                 className="w-full"
               >
                 <PlusCircle className="w-4 h-4" />
-                <span>Log Steps for This Challenge</span>
+                <span>Log Activity for This Challenge</span>
               </StickerButton>
             </div>
           </StickerCard>

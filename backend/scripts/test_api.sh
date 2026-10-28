@@ -2,7 +2,8 @@
 # =============================================================================
 # WellnessAtWork – Case Study 72 API Test Suite
 # =============================================================================
-BASE="http://localhost:7500/api"
+BASE="${API_BASE_URL:-http://localhost:7500/api}"
+ROOT_URL="${BASE%/api}"
 PASS=0; FAIL=0; SKIP=0
 
 green='\033[0;32m'; red='\033[0;31m'; yellow='\033[1;33m'; nc='\033[0m'
@@ -23,11 +24,12 @@ check() {
 echo ""
 echo "============================================================"
 echo "  WellnessAtWork API Integration Test — Case Study 72"
+echo "  Target: $BASE"
 echo "============================================================"
 
 # Pre-flight check
 if ! curl -s "$BASE/health" >/dev/null 2>&1; then
-  echo -e "${red}  Error: Backend server is not running on http://localhost:7500${nc}"
+  echo -e "${red}  Error: Backend server is not running on $BASE${nc}"
   echo "  Please start the backend with: cd backend && npm run dev (or npm start)"
   exit 1
 fi
@@ -37,7 +39,7 @@ echo ""
 echo "▶ [1] Health & Root"
 R=$(curl -s "$BASE/health")
 check "GET /api/health → ok" '"status":"ok"' "$R"
-R=$(curl -s "http://localhost:7500/")
+R=$(curl -s "$ROOT_URL/")
 check "GET / → Operational" 'Operational' "$R"
 
 # 2. AUTH
@@ -197,9 +199,9 @@ check "Wearable status → appleHealthConnected" '"appleHealthConnected"' "$R"
 # 17. DOCS
 echo ""
 echo "▶ [17] Swagger API Docs"
-HTTP=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:7500/api/docs/")
+HTTP=$(curl -s -o /dev/null -w "%{http_code}" "$BASE/docs/")
 check "GET /api/docs → HTTP 200" "200" "$HTTP"
-R=$(curl -s "http://localhost:7500/api/docs.json")
+R=$(curl -s "$BASE/docs.json")
 check "GET /api/docs.json → openapi field" '"openapi"' "$R"
 
 # 18. SECURITY

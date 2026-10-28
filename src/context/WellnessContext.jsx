@@ -1,18 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import {
   universalAvatars,
-  initialChallenges,
   initialActivities,
-  leaderboardData as defaultLeaderboard,
-  wellnessSessions as defaultSessions,
-  wellnessResources as defaultResources,
-  rewardsStore as defaultRewards,
   initialNotifications,
   adminMetrics as defaultAdminMetrics
 } from '../data/demoData';
 import api from '../services/api';
 import { initSocketClient, disconnectSocket } from '../services/socket';
 
+const CATALOG_KEYS = new Set(['challenges', 'sessions', 'resources', 'leaderboard', 'rewards']);
 const WellnessContext = createContext(null);
 
 export const WellnessProvider = ({ children }) => {
@@ -20,33 +16,31 @@ export const WellnessProvider = ({ children }) => {
   const [authLoading, setAuthLoading] = useState(true);
   const [backendError, setBackendError] = useState('');
 
-  const [challenges, setChallenges] = useState(() => {
-    const saved = localStorage.getItem('waw_challenges');
-    return saved ? JSON.parse(saved) : initialChallenges;
-  });
+  const [challenges, setChallenges] = useState([]);
 
   const [activities, setActivities] = useState(() => {
     const saved = localStorage.getItem('waw_activities');
     return saved ? JSON.parse(saved) : initialActivities;
   });
 
-  const [sessions, setSessions] = useState(() => {
-    const saved = localStorage.getItem('waw_sessions');
-    return saved ? JSON.parse(saved) : defaultSessions;
-  });
+  const [sessions, setSessions] = useState([]);
 
-  const [rewards, setRewards] = useState(() => {
-    const saved = localStorage.getItem('waw_rewards');
-    return saved ? JSON.parse(saved) : defaultRewards;
-  });
+  const [rewards, setRewards] = useState([]);
 
   const [notifications, setNotifications] = useState(() => {
     const saved = localStorage.getItem('waw_notifications');
     return saved ? JSON.parse(saved) : initialNotifications;
   });
 
-  const [leaderboardData, setLeaderboardData] = useState(defaultLeaderboard);
-  const [wellnessResources, setWellnessResources] = useState(defaultResources);
+  const [leaderboardData, setLeaderboardData] = useState({ overall: [] });
+  const [wellnessResources, setWellnessResources] = useState([]);
+  const [catalogStatus, setCatalogStatus] = useState({
+    challenges: { loading: true, error: '' },
+    sessions: { loading: true, error: '' },
+    resources: { loading: true, error: '' },
+    leaderboard: { loading: true, error: '' },
+    rewards: { loading: true, error: '' }
+  });
   const [adminMetrics, setAdminMetrics] = useState(defaultAdminMetrics);
 
   const [deviceSync, setDeviceSync] = useState({
@@ -134,16 +128,8 @@ export const WellnessProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('waw_challenges', JSON.stringify(challenges));
-  }, [challenges]);
-
-  useEffect(() => {
     localStorage.setItem('waw_activities', JSON.stringify(activities));
   }, [activities]);
-
-  useEffect(() => {
-    localStorage.setItem('waw_sessions', JSON.stringify(sessions));
-  }, [sessions]);
 
   useEffect(() => {
     localStorage.setItem('waw_notifications', JSON.stringify(notifications));
@@ -153,62 +139,114 @@ export const WellnessProvider = ({ children }) => {
   const refreshBackendData = useCallback(async () => {
     if (!user) return;
     setBackendError('');
-    try {
-      // 1. Fetch Dashboard / Profile
-      const dashRes = await api.getDashboard();
-      if (dashRes && dashRes.data && dashRes.data.user) {
-        setUser(prev => ({ ...prev, ...dashRes.data.user }));
-        if (dashRes.data.recentActivities) {
-          setActivities(dashRes.data.recentActivities);
+    setCatalogStatus(prev => Object.fromEntries(
+      Object.entries(prev).map(([key, status]) => [key, { ...status, loading: true, error: '' }])
+    ));
+
+    const tasks = [
+      {
+        key: 'dashboard',
+        run: () => api.getDashboard(),
+        apply: (response) => {
+          if (!response.data?.user) throw new Error('Dashboard response did not include a user.');
+          setUser(prev => prev ? { ...prev, ...response.data.user } : prev);
+          if (Array.isArray(response.data.recentActivities)) {
+            setActivities(response.data.recentActivities);
+          }
+        }
+      },
+      {
+        key: 'challenges',
+        run: () => api.getChallenges(),
+        apply: (response) => {
+          if (!Array.isArray(response.data?.challenges)) throw new Error('Unexpected challenges response.');
+          setChallenges(response.data.challenges);
+        }
+      },
+      {
+        key: 'sessions',
+        run: () => api.getSessions(),
+        apply: (response) => {
+          if (!Array.isArray(response.data?.sessions)) throw new Error('Unexpected sessions response.');
+          setSessions(response.data.sessions);
+        }
+      },
+      {
+        key: 'rewards',
+        run: () => api.getRewards(),
+        apply: (response) => {
+          if (!Array.isArray(response.data?.rewards)) throw new Error('Unexpected rewards response.');
+          setRewards(response.data.rewards);
+        }
+      },
+      {
+        key: 'notifications',
+        run: () => api.getNotifications(),
+        apply: (response) => {
+          if (!Array.isArray(response.data?.notifications)) throw new Error('Unexpected notifications response.');
+          setNotifications(response.data.notifications);
+        }
+      },
+      {
+        key: 'leaderboard',
+        run: () => api.getLeaderboard(),
+        apply: (response) => {
+          if (!Array.isArray(response.data?.overall)) throw new Error('Unexpected leaderboard response.');
+          setLeaderboardData({ overall: response.data.overall });
+        }
+      },
+      {
+        key: 'resources',
+        run: () => api.getResources(),
+        apply: (response) => {
+          if (!Array.isArray(response.data?.resources)) throw new Error('Unexpected resources response.');
+          setWellnessResources(response.data.resources);
         }
       }
+    ];
 
-      // 2. Fetch Challenges
-      const chRes = await api.getChallenges();
-      if (Array.isArray(chRes.data?.challenges)) {
-        setChallenges(chRes.data.challenges);
-      }
-
-      // 3. Fetch Sessions
-      const sessRes = await api.getSessions();
-      if (Array.isArray(sessRes.data?.sessions)) {
-        setSessions(sessRes.data.sessions);
-      }
-
-      // 4. Fetch Rewards
-      const rewRes = await api.getRewards();
-      if (Array.isArray(rewRes.data?.rewards)) {
-        setRewards(rewRes.data.rewards);
-      }
-
-      // 5. Fetch Notifications
-      const notifRes = await api.getNotifications();
-      if (notifRes && notifRes.data && notifRes.data.notifications) {
-        setNotifications(notifRes.data.notifications);
-      }
-
-      // 6. Fetch Leaderboard
-      const leadRes = await api.getLeaderboard();
-      if (leadRes && leadRes.data && leadRes.data.overall) {
-        setLeaderboardData({ overall: leadRes.data.overall });
-      }
-
-      // 7. Fetch Resources
-      const resRes = await api.getResources();
-      if (Array.isArray(resRes.data?.resources)) {
-        setWellnessResources(resRes.data.resources);
-      }
-
-      // 8. Fetch Reports / Admin metrics if admin
-      if (user.role === 'admin' || user.role === 'Admin') {
-        const partRes = await api.getParticipationReport();
-        if (partRes && partRes.data && partRes.data.report) {
-          setAdminMetrics(prev => ({ ...prev, ...partRes.data.report }));
+    if (user.role === 'admin' || user.role === 'Admin') {
+      tasks.push({
+        key: 'adminReport',
+        run: () => api.getParticipationReport(),
+        apply: (response) => {
+          if (!response.data?.report) throw new Error('Unexpected participation report response.');
+          setAdminMetrics(prev => ({ ...prev, ...response.data.report }));
         }
-      }
-    } catch (err) {
-      setBackendError(err.message || 'Could not load current account data from the backend.');
+      });
     }
+
+    const results = await Promise.allSettled(tasks.map(task => task.run()));
+    const errors = [];
+    const sectionErrors = {};
+
+    results.forEach((result, index) => {
+      const task = tasks[index];
+      let error = null;
+      if (result.status === 'rejected') {
+        error = result.reason;
+      } else {
+        try {
+          task.apply(result.value);
+        } catch (applyError) {
+          error = applyError;
+        }
+      }
+
+      if (error) {
+        const message = error.message || `Could not load ${task.key}.`;
+        errors.push(`${task.key}: ${message}`);
+        if (CATALOG_KEYS.has(task.key)) sectionErrors[task.key] = message;
+      }
+    });
+
+    setCatalogStatus(prev => Object.fromEntries(
+      Object.keys(prev).map(key => [
+        key,
+        { loading: false, error: sectionErrors[key] || '' }
+      ])
+    ));
+    setBackendError(errors.join(' '));
   }, [user?.role]);
 
   // Initial load on startup
@@ -553,6 +591,7 @@ export const WellnessProvider = ({ children }) => {
         universalAvatars,
         selectAvatar,
         challenges,
+        catalogStatus,
         joinChallenge,
         createChallenge,
         activities,
